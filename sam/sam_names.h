@@ -36,14 +36,17 @@ namespace sam
      */
     namespace names
     {
-        extern const Name adaptive_threshold;	    //!< Specific to srm_pecevski_alpha neuron
-        extern const Name e_0_exc;		            //!< Specific to srm_pecevski_alpha neuron
-        extern const Name e_0_inh;		            //!< Specific to srm_pecevski_alpha neuron
-        extern const Name input_conductance;	    //!< Specific to srm_peceveski_alpha neuron
-        extern const Name target_rate;	            //!< Specific to srm_peceveski_alpha neuron
-        extern const Name target_adaptation_speed;	//!< Specific to srm_peceveski_alpha neuron
-        extern const Name tau_exc;                  //!< Specific to srm_pecevski_alpha neuron
-        extern const Name tau_inh;                  //!< Specific to srm_pecevski_alpha neuron
+        extern const Name adaptive_threshold;
+        extern const Name e_0_exc;
+        extern const Name e_0_inh;
+        extern const Name input_conductance;
+        extern const Name r_m;
+        extern const Name rect_exc;
+        extern const Name rect_inh;
+        extern const Name target_rate;
+        extern const Name target_adaptation_speed;
+        extern const Name tau_exc;
+        extern const Name tau_inh;
     }
 }
 

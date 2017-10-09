@@ -1,5 +1,5 @@
 /*
-*  SrmPeceveskiAlpha.h
+*  srm_pecevski_alpha.h
 *
 *  This file is part of SAM, an extension of NEST.
 *
@@ -63,7 +63,7 @@ namespace sam
 	* is called the adaptive threshold. By setting \a c3 = 0, \a c2 can be used as an
 	* offset spike rate for an otherwise linear rate model.
 	*
-	* The dead time enables to include refractoriness. If dead time is 0, the
+	* The dead time enables refractoriness. If dead time is 0, the
 	* number of spikes in one time step might exceed one and is drawn from the
 	* Poisson distribution accordingly. Otherwise, the probability for a spike
 	* is given by \f$ 1 - exp(-rate*h) \f$, where h is the simulation time step.
@@ -92,10 +92,14 @@ namespace sam
 	* <table>
 	* <tr><th>name</th>                       <th>type</th>   <th>comment</th></tr>
 	* <tr><td>\a V_m</td>                     <td>double</td> <td>Membrane potential [mV]</td></tr>
+	* <tr><td>\a rect_exc</td>                <td>bool</td>   <td>Use a rectangular EPSP (false)</td></tr>
+	* <tr><td>\a rect_inh</td>                <td>bool</td>   <td>Use a rectangular IPSP (false)</td></tr>
+	* <tr><td>\a r_m</td>                     <td>double</td> <td>Membrane resistance (1.0) [GOhm] </td></tr>
 	* <tr><td>\a e_0_exc</td>				  <td>double</td> <td>Amplitude factor of EPSPs [mV]</td></tr>
 	* <tr><td>\a e_0_inh</td>				  <td>double</td> <td>Amplitude factor of IPSPs [mV]</td></tr>
 	* <tr><td>\a tau_exc</td>				  <td>double</td> <td>Alpha EPSP time constant [ms]</td></tr>
 	* <tr><td>\a tau_inh</td>				  <td>double</td> <td>Alpha IPSP time constant [ms]</td></tr>
+    * <tr><td>\a tau_m</td>		              <td>double</td> <td>Impulse current response time constant [ms]</td></tr>
 	* <tr><td>\a dead_time</td>               <td>double</td> <td>Duration of the dead time (1.0, &ge 0.0) [ms]</td></tr>
 	* <tr><td>\a dead_time_random</td>        <td>bool</td>   <td>Should a random dead time be drawn after each
 	*                                                             spike? (false) </td></tr>
@@ -197,20 +201,31 @@ namespace sam
 		*/
 		struct Parameters_
 		{
-			/** Amplitude of excitatory alpha PSP before truncation. */
+            /** If true, uses a rectangular PSP rather than the half-alpha shape. */
+            bool use_rect_psp_exc_;
+
+            /** If true, uses a rectangular PSP rather than the half-alpha shape. */
+            bool use_rect_psp_inh_;
+
+            /** Prefactor that converts input current into voltages. */
+            double resistance_;
+
+			/** Amplitude of excitatory alpha PSP before truncation (if not using rect PSPs),
+			 * otherwise it is twice rect amplitude. */
 			double epsilon_0_exc_;
 
-			/** Amplitude of inhibitory alpha PSP before truncation. */
+            /** Amplitude of inhibitory alpha PSP before truncation (if not using rect PSPs),
+             * otherwise it is twice rect amplitude. */
 			double epsilon_0_inh_;
 
-			/*** Excitatory alpha PSP time constant. */
+			/*** Excitatory alpha PSP time constant, or rect PSP duration. */
 			double tau_alpha_exc_;
 
-			/*** Inhibitory alpha PSP time constant. */
+			/*** Inhibitory alpha PSP time constant, or rect PSP duration. */
 			double tau_alpha_inh_;
 
-			/** Conductance for piecewise constant input currents. */
-			double input_conductance_;
+            /** Membrane time constant (for current effects on voltage). */
+            double tau_membrane_;
 
 			/** Dead time in ms. */
 			double dead_time_;
@@ -259,6 +274,7 @@ namespace sam
 			double u_membrane_; //!< The membrane potential
 			double input_current_; //!< The piecewise linear input currents
 			double adaptive_threshold_; //!< adaptive threshold to maintain average output rate
+            double u_i_; //!< Current-induced voltage
 			int r_; //!< Number of refractory steps remaining
 
 			State_(); //!< Default initialization
@@ -294,6 +310,7 @@ namespace sam
 			double t_1; //!< First time at half-amplitude of generic alpha kernel
 			double h_; //!< simulation time step in ms
 			double dt_rate_; //!< rate parameter of dead time distribution
+            double propagator_;
 
 			librandom::RngPtr rng_; // random number generator of my own thread
 			librandom::PoissonRandomDev poisson_dev_; // random deviate generator

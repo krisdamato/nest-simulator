@@ -30,6 +30,9 @@ namespace sam
         const Name e_0_exc("e_0_exc");
         const Name e_0_inh("e_0_inh");
         const Name input_conductance("input_conductance");
+        const Name r_m("r_m");
+        const Name rect_exc("rect_exc");
+        const Name rect_inh("rect_inh");
         const Name target_rate("target_rate");
         const Name target_adaptation_speed("target_adaptation_speed");
         const Name tau_exc("tau_exc");

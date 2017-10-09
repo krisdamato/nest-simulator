@@ -1,5 +1,5 @@
 /*
-*  SrmPeceveskiAlpha.h
+*  srm_pecevski_alpha.cpp
 *
 *  This file is part of SAM, an extension of NEST.
 *
@@ -24,15 +24,16 @@
 
 #include "srm_pecevski_alpha.h"
 
+#include "compose.hpp"
+#include "doubledatum.h"
 #include "dict.h"
+#include "dictutils.h"
 #include "exceptions.h"
 #include "integerdatum.h"
-#include "doubledatum.h"
-#include "dictutils.h"
 #include "numerics.h"
-#include "universal_data_logger_impl.h"
-#include "compose.hpp"
+#include "sam_defines.h"
 #include "sam_names.h"
+#include "universal_data_logger_impl.h"
 
 #include "../nestkernel/logging_manager.h"
 
@@ -65,11 +66,14 @@ namespace sam
 	// SrmPecevskiAlpha::Parameters_ implementation.
 	//
 	SrmPecevskiAlpha::Parameters_::Parameters_():
+    use_rect_psp_exc_(false),
+    use_rect_psp_inh_(false),
+    resistance_(1),
 	epsilon_0_exc_(2.8),			// mv
 	epsilon_0_inh_(2.8),			// mv
 	tau_alpha_exc_(8.5),			// ms
 	tau_alpha_inh_(8.5),			// ms
-	input_conductance_(1),
+    tau_membrane_(10.0),            // ms
 	dead_time_(1.0),				// ms
 	dead_time_random_(false),		// ms
 	dead_time_shape_(1l),
@@ -87,26 +91,32 @@ namespace sam
 
 	void SrmPecevskiAlpha::Parameters_::get(DictionaryDatum& d) const
 	{
+        def<bool>(d, sam::names::rect_exc, use_rect_psp_exc_);
+        def<bool>(d, sam::names::rect_inh, use_rect_psp_inh_);
+        def<double>(d, sam::names::r_m, resistance_);
 		def<double>(d, nest::names::dead_time, dead_time_);
 		def<double>(d, nest::names::dead_time_random, dead_time_random_);
 		def<long>(d, nest::names::dead_time_shape, dead_time_shape_);
 		def<double>(d, sam::names::e_0_exc, epsilon_0_exc_);
 		def<double>(d, sam::names::e_0_inh, epsilon_0_inh_);
 		def<double>(d, sam::names::tau_exc, tau_alpha_exc_);
-		def<double>(d, sam::names::tau_inh, tau_alpha_inh_);
+        def<double>(d, sam::names::tau_inh, tau_alpha_inh_);
+        def<double>(d, nest::names::tau_m, tau_membrane_);
 		def<bool>(d, nest::names::with_reset, with_reset_);
 		def<double>(d, nest::names::c_1, c_1_);
 		def<double>(d, nest::names::c_2, c_2_);
 		def<double>(d, nest::names::c_3, c_3_);
 		def<double>(d, nest::names::I_e, I_e_);
 		def<double>(d, nest::names::t_ref_remaining, t_ref_remaining_);
-		def<double>(d, sam::names::input_conductance, input_conductance_);
 		def<double>(d, sam::names::target_rate, target_rate_);
 		def<double>(d, sam::names::target_adaptation_speed, target_adaptation_speed_);
 	}
 
 	void SrmPecevskiAlpha::Parameters_::set(const DictionaryDatum& d)
 	{
+        updateValue<bool>(d, sam::names::rect_exc, use_rect_psp_exc_);
+        updateValue<bool>(d, sam::names::rect_inh, use_rect_psp_inh_);
+        updateValue<double>(d, sam::names::r_m, resistance_);
 		updateValue<double>(d, nest::names::dead_time, dead_time_);
 		updateValue<double>(d, nest::names::dead_time_random, dead_time_random_);
 		updateValue<long>(d, nest::names::dead_time_shape, dead_time_shape_);
@@ -114,13 +124,13 @@ namespace sam
 		updateValue<double>(d, sam::names::e_0_inh, epsilon_0_inh_);
 		updateValue<double>(d, sam::names::tau_exc, tau_alpha_exc_);
 		updateValue<double>(d, sam::names::tau_inh, tau_alpha_inh_);
+        updateValue<double>(d, nest::names::tau_m, tau_membrane_);
 		updateValue<bool>(d, nest::names::with_reset, with_reset_);
 		updateValue<double>(d, nest::names::c_1, c_1_);
 		updateValue<double>(d, nest::names::c_2, c_2_);
 		updateValue<double>(d, nest::names::c_3, c_3_);
 		updateValue<double>(d, nest::names::I_e, I_e_);
 		updateValue<double>(d, nest::names::t_ref_remaining, t_ref_remaining_);
-		updateValue<double>(d, sam::names::input_conductance, input_conductance_);
 		updateValue<double>(d, sam::names::target_rate, target_rate_);
 		updateValue<double>(d, sam::names::target_adaptation_speed, target_adaptation_speed_);
 
@@ -139,10 +149,20 @@ namespace sam
 			throw BadProperty("All decay constants must be greater than 0.");
 		}
 
+        if (tau_membrane_ < 0.0)
+        {
+            throw BadProperty("Membrane time constant must be 0 or greater.");
+        }
+
 		if (epsilon_0_exc_ <= 0.0 || epsilon_0_inh_ <= 0.0)
 		{
 			throw BadProperty("All PSP absolute amplitudes bust be greater than 0.");
 		}
+
+        if (resistance_ <= 0)
+        {
+            throw BadProperty("Resistance must be greater than 0.");
+        }
 
 		if (c_3_< 0.0)
 		{
@@ -177,6 +197,7 @@ namespace sam
 		u_membrane_(0.0),
 		input_current_(0.0),
 		adaptive_threshold_(0.0),
+        u_i_(0.0),
 		r_(0)
 	{
 
@@ -276,9 +297,10 @@ namespace sam
 		B_.logger_.init();
 
 		V_.h_ = nest::Time::get_resolution().get_ms();
+        V_.propagator_ = std::exp(-V_.h_ / P_.tau_membrane_);
 		V_.rng_ = nest::kernel().rng_manager.get_rng(get_thread());
 
-		V_.t_1 = 0.23196095298653444;
+		V_.t_1 = 0.23196095298653444; // First solution of t exp(1-t) = 0.5
 
 		if (P_.dead_time_ != 0 && P_.dead_time_ < V_.h_)
 			P_.dead_time_ = V_.h_;
@@ -317,14 +339,22 @@ namespace sam
 	}
 
 	/*
-	* Spike response kernel.
+	* Spike response kernel: half-alpha shape or rectangular (depending on user parameters).
 	*/
 	double SrmPecevskiAlpha::kernel(const double time_since_spike, const bool use_exc_kernel = true) const
 	{
 		const double& t = time_since_spike;
         const double& tau_alpha = use_exc_kernel ? P_.tau_alpha_exc_ : P_.tau_alpha_inh_;
         const double& epsilon = use_exc_kernel ? P_.epsilon_0_exc_ : P_.epsilon_0_inh_;
+        bool use_rect_psp = use_exc_kernel ? P_.use_rect_psp_exc_ : P_.use_rect_psp_inh_;
 
+        // Use the rectangular PSP if requested.
+        if (use_rect_psp)
+        {
+            return (t >= 0 && t <= tau_alpha) ? epsilon / 2 : 0.0;
+        }
+
+        // Otherwise return the half-alpha PSP.
         return epsilon * ((t / tau_alpha + V_.t_1) * (std::exp(1 - (t / tau_alpha + V_.t_1))) - 0.5);
 	}
 
@@ -344,7 +374,7 @@ namespace sam
 
             double delta = (now - nest::Time::step(spike_time)).get_ms();
             double this_psp = amplitude * kernel(delta, use_exc_psp);
-            if (this_psp <= 0 && delta > 0) // We'll remove spikes when they aren't affecting membrane voltage.
+            if (this_psp <= sam::effective_zero && delta > 0) // We'll remove spikes when they aren't affecting membrane voltage.
             {
                 // Erase the spike, because we won't need it anymore.
                 it = queue.EraseItemAt(it);
@@ -360,7 +390,6 @@ namespace sam
 		return use_exc_psp? psp : -psp;
 	}
 
-
 	/**
 	* Update the node to the given time point.
 	*/
@@ -372,10 +401,24 @@ namespace sam
 		{
 			nest::Time now = nest::Time::step(origin.get_steps() + lag);
 
+            // Calculate PSP responses.
 			double psp_exc = get_psp_sum(now, true);
 			double psp_inh = get_psp_sum(now, false);
 
-			S_.u_membrane_ = psp_exc + psp_inh + P_.input_conductance_ * (S_.input_current_ + P_.I_e_);
+            // Update current-induced voltage.
+            if (V_.propagator_ >= 0.05)
+            {
+                // If the membrane time constant is large enough, use low-pass filtering.
+                S_.u_i_ = V_.propagator_ * S_.u_i_ + (1 - V_.propagator_) * P_.resistance_ * (S_.input_current_ + P_.I_e_);
+            }
+            else
+            {
+                // Otherwise, use a straightforward jump.
+                S_.u_i_ = P_.resistance_ * (S_.input_current_ + P_.I_e_);
+            }
+
+            // Update total potential.
+			S_.u_membrane_ = psp_exc + psp_inh + S_.u_i_;
 
 			S_.adaptive_threshold_ -= 1e-3 * V_.h_ * P_.target_rate_ * P_.target_adaptation_speed_;
 
@@ -429,6 +472,7 @@ namespace sam
 							B_.inh_queue_.Clear();
 
 							S_.u_membrane_ = 0.0;
+                            S_.u_i_ = 0.0;
 						}
 
 						S_.adaptive_threshold_ += P_.target_adaptation_speed_;

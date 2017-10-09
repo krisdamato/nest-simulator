@@ -33,6 +33,7 @@ set( MODULE_SOURCES
         sammodule.h sammodule.cpp
         srm_pecevski_alpha.h srm_pecevski_alpha.cpp
         spike_queue.h
+        sam_defines.h
         sam_names.h sam_names.cpp
         )
 
