@@ -32,6 +32,7 @@ set( MODULE_NAME ${SHORT_NAME}module )
 set( MODULE_SOURCES
         sammodule.h sammodule.cpp
         srm_pecevski_alpha.h srm_pecevski_alpha.cpp
+        stdp_pecevski_connection.h
         spike_queue.h
         sam_defines.h
         sam_names.h sam_names.cpp

@@ -452,7 +452,7 @@ namespace sam
 
 					if (n_spikes > 0) // Is there a spike? Then set the new dead time.
 					{
-						// Set dead time interval according to parameters
+						// Set dead time interval according to parameters.
 						if (P_.dead_time_random_)
 						{
 							S_.r_ = nest::Time(nest::Time::ms(V_.gamma_dev_(V_.rng_) / V_.dt_rate_)).get_steps();
@@ -460,12 +460,15 @@ namespace sam
 						else
 							S_.r_ = V_.DeadTimeCounts_;
 
-						// And send the spike event
+						// Set spike time.
+                        set_spiketime(nest::Time::step(origin.get_steps() + lag + 1));
+
+						// And send the spike event.
 						nest::SpikeEvent se;
 						se.set_multiplicity(n_spikes);
 						nest::kernel().event_delivery_manager.send(*this, se, lag);
 
-						// Reset the potential if applicable
+						// Reset the potential if applicable.
 						if (P_.with_reset_)
 						{
 							B_.exc_queue_.Clear();

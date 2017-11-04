@@ -28,6 +28,7 @@
 // include headers with your own stuff
 #include "sam_names.h"
 #include "srm_pecevski_alpha.h"
+#include "stdp_pecevski_connection.h"
 
 // Includes from nestkernel:
 #include "connection_manager_impl.h"
@@ -71,7 +72,7 @@ sam::SamModule::~SamModule()
 
 const std::string sam::SamModule::name(void) const
 {
-  return std::string("SAM module - Pecevski 2016 SRM alpha model");
+  return std::string("SAM module - Pecevski et al. 2016 models");
 }
 
 const std::string sam::SamModule::commandstring(void) const
@@ -86,20 +87,5 @@ void sam::SamModule::init(SLIInterpreter* i)
 {
   nest::kernel().model_manager.register_node_model<SrmPecevskiAlpha>("srm_pecevski_alpha");
 
-  /* Register a synapse type.
-     Give synapse type as template argument and the name as second argument.
-
-     There are two choices for the template argument:
-         - nest::TargetIdentifierPtrRport
-         - nest::TargetIdentifierIndex
-     The first is the standard and you should usually stick to it.
-     nest::TargetIdentifierIndex reduces the memory requirement of synapses
-     even further, but limits the number of available rports. Please see
-     Kunkel et al, Front Neurofinfom 8:78 (2014), Sec 3.3.2, for details.
-  */
-  //nest::kernel().model_manager.register_connection_model<DropOddSpikeConnection<nest::TargetIdentifierPtrRport>>("drop_odd_synapse");
-
-  // Register connection rule.
-  //nest::kernel().connection_manager.register_conn_builder< StepPatternBuilder>("step_pattern" );
-
+  nest::kernel().model_manager.register_connection_model<StdpPecevskiConnection<nest::TargetIdentifierPtrRport> >("stdp_pecevski_synapse");
 } // SamModule::init()

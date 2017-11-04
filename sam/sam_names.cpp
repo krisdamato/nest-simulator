@@ -29,7 +29,10 @@ namespace sam
         const Name adaptive_threshold("adaptive_threshold");
         const Name e_0_exc("e_0_exc");
         const Name e_0_inh("e_0_inh");
+        const Name eta_0("eta_0");
+        const Name eta_final("eta_final");
         const Name input_conductance("input_conductance");
+        const Name learning_time("learning_time");
         const Name r_m("r_m");
         const Name rect_exc("rect_exc");
         const Name rect_inh("rect_inh");
@@ -37,5 +40,6 @@ namespace sam
         const Name target_adaptation_speed("target_adaptation_speed");
         const Name tau_exc("tau_exc");
         const Name tau_inh("tau_inh");
+        const Name w_baseline("w_baseline");
     }
 }
