@@ -89,7 +89,10 @@ namespace sam
     tau_bias_(15.0),
     max_bias_(5.0),
     min_bias_(-30.0),
-    t_(0.58)
+    use_random_bias_(false),
+    mu_bias_(0.0),
+    sigma_bias_(1.0),
+	t_(0.58)
 	{
 
 	}
@@ -118,7 +121,10 @@ namespace sam
         def<double>(d, sam::names::tau_bias, tau_bias_);
         def<double>(d, sam::names::max_bias, max_bias_);
         def<double>(d, sam::names::min_bias, min_bias_);
-        def<double>(d, sam::names::t, t_);
+        def<bool>(d, sam::names::use_random_bias, use_random_bias_);
+        def<double>(d, sam::names::mu_bias, mu_bias_);
+        def<double>(d, sam::names::sigma_bias, sigma_bias_);
+		def<double>(d, sam::names::t, t_);
 	}
 
 	void SrmPecevskiAlpha::Parameters_::set(const DictionaryDatum& d)
@@ -145,7 +151,10 @@ namespace sam
         updateValue<double>(d, sam::names::tau_bias, tau_bias_);
         updateValue<double>(d, sam::names::max_bias, max_bias_);
         updateValue<double>(d, sam::names::min_bias, min_bias_);
-        updateValue<double>(d, sam::names::t, t_);
+        updateValue<bool>(d, sam::names::use_random_bias, use_random_bias_);
+        updateValue<double>(d, sam::names::mu_bias, mu_bias_);
+        updateValue<double>(d, sam::names::sigma_bias, sigma_bias_);
+		updateValue<double>(d, sam::names::t, t_);
 
 		if (dead_time_ < 0.0)
 		{
@@ -354,6 +363,21 @@ namespace sam
 			V_.DeadTimeCounts_ = nest::Time(nest::Time::ms(P_.dead_time_)).get_steps();
 			assert(V_.DeadTimeCounts_ >= 0); // Since t_ref_ >= 0, this can only fail in error
 		}
+
+        if (P_.use_random_bias_)
+        {
+			// Set Gaussian distribution parameters.
+			DictionaryDatum d = DictionaryDatum(new Dictionary());
+			def<double>(d, librandom::names::low, P_.min_bias_);
+			def<double>(d, librandom::names::high, P_.max_bias_);
+			def<double>(d, librandom::names::mu, P_.mu_bias_);
+			def<double>(d, librandom::names::sigma, P_.sigma_bias_);
+
+            V_.gaussian_dev_.set_status(d);
+
+			// Generate the bias.
+			S_.adaptive_threshold_ = V_.gaussian_dev_(V_.rng_);
+        }
 	}
 
 	/*

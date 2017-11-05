@@ -25,12 +25,14 @@
 #ifndef SRM_PECEVSKI_ALPHA_H
 #define SRM_PECEVSKI_ALPHA_H
 
-#include "nest.h"
 #include "event.h"
+#include "nest.h"
+#include "clipped_randomdev.h"
+#include "gamma_randomdev.h"
+#include "normal_randomdev.h"
+#include "poisson_randomdev.h"
 #include "ring_buffer.h"
 #include "spike_queue.h"
-#include "poisson_randomdev.h"
-#include "gamma_randomdev.h"
 #include "universal_data_logger.h"
 
 #include "archiving_node.h"
@@ -79,6 +81,10 @@ namespace sam
 	* If the neuron does not spike, the threshold linearly decays over time,
 	* decrease the firing probability of the neuron.
 	*
+	* Bias can be generated randomly from a Gaussian distribution clipped by [min_bias,
+	* max_bias], mean mu_bias, standard deviation sigma_bias. In that case initial bias
+	* parameter is ignored.
+	*
 	* This model has been adapted from poisson_dbl_exp_neuron. The default parameters
 	* are set to the mean values in [2], which have were matched to spike-train
 	* recordings.
@@ -122,6 +128,9 @@ namespace sam
 	* <tr><td>\a min_bias</td>                <td>double</td> <td>Minimum bias value (-30.0)</td></tr>
 	* <tr><td>\a T</td>                       <td>double</td> <td>Bias update scaling parameter (0.58)</td></tr>
 	* <tr><td>\a bias</td>                    <td>double</td> <td>Initial bias (5.0)</td></tr>
+	* <tr><td>\a use_random_bias</td>         <td>bool</td> <td>Use a Gaussian random bias (false)</td></tr>
+	* <tr><td>\a mu_bias</td>                 <td>double</td> <td>Mean of bias distribution (0.0)</td></tr>
+	* <tr><td>\a sigma_bias</td>              <td>double</td> <td>Std of bias distribution (1.0)</td></tr>
 	* </table>
 	*
 	* <i>Sends:</i> SpikeEvent
@@ -265,6 +274,11 @@ namespace sam
             double max_bias_;
             double min_bias_;
 
+			/** Bias distribution parameters. */
+			bool use_random_bias_;
+			double mu_bias_;
+			double sigma_bias_;
+
             /** Bias update scaling factor, for use in learning rule. */
             double t_;
 
@@ -323,6 +337,7 @@ namespace sam
 			librandom::RngPtr rng_; // random number generator of my own thread
 			librandom::PoissonRandomDev poisson_dev_; // random deviate generator
 			librandom::GammaRandomDev gamma_dev_; // random deviate generator
+			librandom::ClippedRedrawContinuousRandomDev<librandom::NormalRandomDev> gaussian_dev_; // Gaussian deviate generator
 
 			int DeadTimeCounts_;
 

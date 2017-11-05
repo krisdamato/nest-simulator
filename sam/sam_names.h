@@ -49,13 +49,16 @@ namespace sam
         extern const Name max_weight;
         extern const Name min_bias;
         extern const Name min_weight;
+        extern const Name mu_bias;
         extern const Name r_m;
         extern const Name rect_exc;
         extern const Name rect_inh;
+        extern const Name sigma_bias;
         extern const Name t;
         extern const Name tau_bias;
         extern const Name tau_exc;
         extern const Name tau_inh;
+        extern const Name use_random_bias;
         extern const Name w_baseline;
     }
 }

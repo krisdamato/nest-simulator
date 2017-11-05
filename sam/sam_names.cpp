@@ -39,13 +39,16 @@ namespace sam
         const Name max_weight("max_weight");
         const Name min_bias("min_bias");
         const Name min_weight("min_weight");
+        const Name mu_bias("mu_bias");
         const Name r_m("r_m");
         const Name rect_exc("rect_exc");
         const Name rect_inh("rect_inh");
+        const Name sigma_bias("sigma_bias");
         const Name t("T");
         const Name tau_bias("tau_bias");
         const Name tau_exc("tau_exc");
         const Name tau_inh("tau_inh");
+        const Name use_random_bias("use_random_bias");
         const Name w_baseline("w_baseline");
     }
 }
