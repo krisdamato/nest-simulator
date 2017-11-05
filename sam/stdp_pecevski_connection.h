@@ -33,6 +33,7 @@
 #include "connection.h"
 #include "connector_model.h"
 #include "event.h"
+#include "numerics.h"
 
 // Includes from sli:
 #include "dictdatum.h"
@@ -62,8 +63,8 @@ namespace sam
 	* <table>
 	* <tr><th>name</th>                       <th>type</th>   <th>comment</th></tr>
 	* <tr><td>\a tau</td>                     <td>double</td> <td>Potentiation window of STDP (20.0) [ms]</td></tr>
-	* <tr><td>\a Wmax</td>                    <td>double</td> <td>Maximum connection weight (4.0)</td></tr>
-    * <tr><td>\a Wmin</td>                    <td>double</td> <td>Minimum connection weight (0.0)</td></tr>
+    * <tr><td>\a max_weight</td>              <td>double</td> <td>Maximum connection weight (4.0)</td></tr>
+    * <tr><td>\a min_weight</td>              <td>double</td> <td>Minimum connection weight (0.0)</td></tr>
     * <tr><td>\a eta_0</td>                   <td>double</td> <td>Initial learning rate (0.1)</td></tr>
     * <tr><td>\a eta_final</td>               <td>double</td> <td>Final learning rate (0.0)</td></tr>
     * <tr><td>\a weight</td>                  <td>double</td> <td>Initial connection weight (1.0)</td></tr>
@@ -147,7 +148,7 @@ namespace sam
     private:
         double facilitate(double current_weight, double t) const
         {
-            double delta_weight = std::exp(-t_ * (w_baseline_ + current_weight)) - 1;
+            double delta_weight = numerics::expm1(-t_ * (w_baseline_ + current_weight));
             return std::max(std::min(current_weight + current_eta(t) * delta_weight, Wmax_), Wmin_);
         }
 
@@ -291,8 +292,8 @@ namespace sam
         def<double>(d, nest::names::weight, weight_);
         def<double>(d, nest::names::tau, tau_);
         def<double>(d, sam::names::t, t_);
-        def<double>(d, nest::names::Wmax, Wmax_);
-        def<double>(d, nest::names::Wmin, Wmin_);
+        def<double>(d, sam::names::max_weight, Wmax_);
+        def<double>(d, sam::names::min_weight, Wmin_);
         def<double>(d, sam::names::eta_0, eta_0_);
         def<double>(d, sam::names::eta_final, eta_final_);
         def<double>(d, sam::names::w_baseline, w_baseline_);
@@ -307,8 +308,8 @@ namespace sam
         updateValue<double>(d, nest::names::weight, weight_);
         updateValue<double>(d, nest::names::tau, tau_);
         updateValue<double>(d, sam::names::t, t_);
-        updateValue<double>(d, nest::names::Wmax, Wmax_);
-        updateValue<double>(d, nest::names::Wmin, Wmin_);
+        updateValue<double>(d, sam::names::max_weight, Wmax_);
+        updateValue<double>(d, sam::names::min_weight, Wmin_);
         updateValue<double>(d, sam::names::eta_0, eta_0_);
         updateValue<double>(d, sam::names::eta_final, eta_final_);
         updateValue<double>(d, sam::names::w_baseline, w_baseline_);

@@ -59,8 +59,8 @@ namespace sam
 	*     \f[
 	*        rate = Rect[ c1 * V' + c2 * exp(c3 * V') ],
 	*     \f]
-	* where the effective potential \f$ V' = V_m - E_{sfa}\f$ and \f$ E_{sfa} \f$
-	* is called the adaptive threshold. By setting \a c3 = 0, \a c2 can be used as an
+	* where the effective potential \f$ V' = V_m + E_{sfa}\f$ and \f$ E_{sfa} \f$
+	* is the the intrinsic bias. By setting \a c3 = 0, \a c2 can be used as an
 	* offset spike rate for an otherwise linear rate model.
 	*
 	* The dead time enables refractoriness. If dead time is 0, the
@@ -109,7 +109,6 @@ namespace sam
 	* <tr><td>\a with_reset</td>              <td>bool</td>   <td>Should the membrane potential be reset after a
 	*                                                             spike?</td></tr>
 	* <tr><td>\a I_e</td>                     <td>double</td> <td>Constant input current (0.0) [pA]</td></tr>
-	* <tr><td>\a input_conductance</td>       <td>double</td> <td>Conductance of input currents (1.0) [S]</td></tr>
 	* <tr><td>\a c_1</td>                     <td>double</td> <td>Slope of linear part of transfer function
 	*                                                             (0.0) [Hz/mV]</td></tr>
 	* <tr><td>\a c_2</td>                     <td>double</td> <td>Prefactor of exponential part of transfer function
@@ -118,10 +117,11 @@ namespace sam
 	*                                                             function (0.25, &ge 0.0) [1/mV]</td></tr>
 	* <tr><td>\a b_baseline</td>              <td>double</td> <td>Intrinsic plasticity baseline (-1.0)</td></tr>
 	* <tr><td>\a eta_bias</td>                <td>double</td> <td>Intrinsic plasticity learning rate (0.1)</td></tr>
-	* <tr><td>\a tau_bias</td>                <td>double</td> <td>Coefficient of bias updates (8.5) [ms]</td></tr>
+	* <tr><td>\a tau_bias</td>                <td>double</td> <td>Coefficient of bias updates (15.0) [ms]</td></tr>
 	* <tr><td>\a max_bias</td>                <td>double</td> <td>Maximum bias value (5.0)</td></tr>
 	* <tr><td>\a min_bias</td>                <td>double</td> <td>Minimum bias value (-30.0)</td></tr>
 	* <tr><td>\a T</td>                       <td>double</td> <td>Bias update scaling parameter (0.58)</td></tr>
+	* <tr><td>\a bias</td>                    <td>double</td> <td>Initial bias (5.0)</td></tr>
 	* </table>
 	*
 	* <i>Sends:</i> SpikeEvent

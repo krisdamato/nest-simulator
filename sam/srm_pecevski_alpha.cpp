@@ -30,6 +30,7 @@
 #include "dictutils.h"
 #include "exceptions.h"
 #include "integerdatum.h"
+#include "math.h"
 #include "numerics.h"
 #include "sam_defines.h"
 #include "sam_names.h"
@@ -48,7 +49,7 @@ namespace nest
 	{
 		// use standard names wherever you can for consistency!
 		insert_(nest::names::V_m, &sam::SrmPecevskiAlpha::get_V_m_);
-		insert_(nest::names::E_sfa, &sam::SrmPecevskiAlpha::get_E_sfa_);
+		insert_(sam::names::bias, &sam::SrmPecevskiAlpha::get_E_sfa_);
 	}
 }
 
@@ -73,7 +74,7 @@ namespace sam
 	epsilon_0_inh_(2.8),			// mv
 	tau_alpha_exc_(8.5),			// ms
 	tau_alpha_inh_(8.5),			// ms
-    tau_membrane_(10.0),            // ms
+    tau_membrane_(15.0),            // ms
 	dead_time_(1.0),				// ms
 	dead_time_random_(false),		// ms
 	dead_time_shape_(1l),
@@ -85,7 +86,7 @@ namespace sam
 	t_ref_remaining_(0),			// ms
 	bias_baseline_(-1.0),
     eta_bias_(0.1),
-    tau_bias_(8.5),
+    tau_bias_(15.0),
     max_bias_(5.0),
     min_bias_(-30.0),
     t_(0.58)
@@ -213,7 +214,7 @@ namespace sam
 	SrmPecevskiAlpha::State_::State_():
 		u_membrane_(0.0),
 		input_current_(0.0),
-		adaptive_threshold_(0.0),
+		adaptive_threshold_(5.0),
         u_i_(0.0),
 		r_(0)
 	{
@@ -226,7 +227,7 @@ namespace sam
 	void SrmPecevskiAlpha::State_::get(DictionaryDatum& d, const Parameters_&) const
 	{
 		def<double>(d, nest::names::V_m, u_membrane_); // Membrane potential
-		def<double>(d, sam::names::adaptive_threshold, adaptive_threshold_);
+		def<double>(d, sam::names::bias, adaptive_threshold_);
 	}
 
 	/**
@@ -235,7 +236,7 @@ namespace sam
 	void SrmPecevskiAlpha::State_::set(const DictionaryDatum& d, const Parameters_&)
 	{
 		updateValue<double>(d, nest::names::V_m, u_membrane_);
-		updateValue<double>(d, names::adaptive_threshold, adaptive_threshold_);
+		updateValue<double>(d, sam::names::bias, adaptive_threshold_);
 	}
 
 	//
@@ -444,11 +445,12 @@ namespace sam
 			if (S_.r_ == 0)
 			{
 				// Neuron is not refractory.
-
 				// Calculate instantaneous rate from transfer function:
 				//     rate = c1 * u' + c2 * exp(c3 * u')
 				double V_eff = S_.u_membrane_ + S_.adaptive_threshold_;
 
+                // See Neuronal Dynamics, Gerstner and Kistler, p. 228 for an explanation of
+                // spike probabilities.
 				double rate = (P_.c_1_ * V_eff + P_.c_2_ * std::exp(P_.c_3_ * V_eff));
 				double spike_probability = -numerics::expm1(-rate * V_.h_ * 1e-3);
 				long n_spikes = 0;
@@ -524,24 +526,18 @@ namespace sam
 	{
 		assert(e.get_delay() > 0);
 
-		if (e.get_rport() == 0)
+		if (e.get_weight() > 0.0)
 		{
 			// Add spike to the queue.
 			// Note: we need to compute the absolute number of steps since the beginning of simulation time.
 			B_.exc_queue_.AddSpike(e.get_rel_delivery_steps(nest::Time()), e.get_weight() * e.get_multiplicity());
 		}
-		else if (e.get_rport() == 1)
-		{
-			// Add spike to the queue.
-			// Note: we need to compute the absolute number of steps since the beginning of simulation time.
-			B_.inh_queue_.AddSpike(e.get_rel_delivery_steps(nest::Time()), e.get_weight() * e.get_multiplicity());
-		}
 		else
-		{
-			std::ostringstream msg;
-			msg << "Unexpected rport id: " << e.get_rport();
-			throw nest::BadProperty(msg.str());
-		}
+        {
+            // Add spike to the queue.
+            // Note: we need to compute the absolute number of steps since the beginning of simulation time.
+            B_.inh_queue_.AddSpike(e.get_rel_delivery_steps(nest::Time()), fabs(e.get_weight()) * e.get_multiplicity());
+        }
 	}
 
 	/**

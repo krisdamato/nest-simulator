@@ -36,8 +36,8 @@ namespace sam
      */
     namespace names
     {
-        extern const Name adaptive_threshold;
         extern const Name b_baseline;
+        extern const Name bias;
         extern const Name e_0_exc;
         extern const Name e_0_inh;
         extern const Name eta_bias;
@@ -46,7 +46,9 @@ namespace sam
         extern const Name input_conductance;
         extern const Name learning_time;
         extern const Name max_bias;
+        extern const Name max_weight;
         extern const Name min_bias;
+        extern const Name min_weight;
         extern const Name r_m;
         extern const Name rect_exc;
         extern const Name rect_inh;

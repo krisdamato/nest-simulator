@@ -26,8 +26,8 @@ namespace sam
 {
     namespace names
     {
-        const Name adaptive_threshold("adaptive_threshold");
         const Name b_baseline("b_baseline");
+        const Name bias("bias");
         const Name e_0_exc("e_0_exc");
         const Name e_0_inh("e_0_inh");
         const Name eta_bias("eta_bias");
@@ -36,7 +36,9 @@ namespace sam
         const Name input_conductance("input_conductance");
         const Name learning_time("learning_time");
         const Name max_bias("max_bias");
+        const Name max_weight("max_weight");
         const Name min_bias("min_bias");
+        const Name min_weight("min_weight");
         const Name r_m("r_m");
         const Name rect_exc("rect_exc");
         const Name rect_inh("rect_inh");
