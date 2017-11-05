@@ -69,6 +69,7 @@ namespace sam
     * <tr><td>\a weight</td>                  <td>double</td> <td>Initial connection weight (1.0)</td></tr>
     * <tr><td>\a w_baseline</td>              <td>double</td> <td>Baseline weight offset (2.5 ln 0.2)</td></tr>
     * <tr><td>\a learning_time</td>           <td>long</td> <td>Learning duration in ms; -1 = forever (-1) [ms]</td></tr>
+    * <tr><td>\a T</td>                       <td>long</td> <td>Scaling parameter in weight update.</td></tr>
     * </table>
 	*
 	* <i>Sends:</i> SpikeEvent
@@ -146,7 +147,7 @@ namespace sam
     private:
         double facilitate(double current_weight, double t) const
         {
-            double delta_weight = std::exp(-(w_baseline_ + current_weight)) - 1;
+            double delta_weight = std::exp(-t_ * (w_baseline_ + current_weight)) - 1;
             return std::max(std::min(current_weight + current_eta(t) * delta_weight, Wmax_), Wmin_);
         }
 
@@ -179,6 +180,7 @@ namespace sam
         double eta_final_;
         double weight_;
         double tau_;
+        double t_;
         double Wmax_;
         double Wmin_;
         double w_baseline_;
@@ -257,6 +259,7 @@ namespace sam
               eta_final_(0),
               weight_(1.0),
               tau_(20.0),
+              t_(0.58),
               Wmax_(4.0),
               Wmin_(0.0),
               w_baseline_(-4.02359), // 2.5 * ln(0.2) (see [1]).
@@ -272,6 +275,7 @@ namespace sam
               eta_final_(rhs.eta_final_),
               weight_(rhs.weight_),
               tau_(rhs.tau_),
+              t_(rhs.t_),
               Wmax_(rhs.Wmax_),
               Wmin_(rhs.Wmin_),
               w_baseline_(rhs.w_baseline_),
@@ -286,6 +290,7 @@ namespace sam
         ConnectionBase::get_status(d);
         def<double>(d, nest::names::weight, weight_);
         def<double>(d, nest::names::tau, tau_);
+        def<double>(d, sam::names::t, t_);
         def<double>(d, nest::names::Wmax, Wmax_);
         def<double>(d, nest::names::Wmin, Wmin_);
         def<double>(d, sam::names::eta_0, eta_0_);
@@ -301,6 +306,7 @@ namespace sam
         ConnectionBase::set_status(d, cm);
         updateValue<double>(d, nest::names::weight, weight_);
         updateValue<double>(d, nest::names::tau, tau_);
+        updateValue<double>(d, sam::names::t, t_);
         updateValue<double>(d, nest::names::Wmax, Wmax_);
         updateValue<double>(d, nest::names::Wmin, Wmin_);
         updateValue<double>(d, sam::names::eta_0, eta_0_);

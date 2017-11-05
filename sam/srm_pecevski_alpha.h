@@ -74,11 +74,10 @@ namespace sam
 	* \a dead_time=0, which draws Poisson numbers. Only for very large spike rates
 	* (> 1 spike/h) this will cause errors.
 	*
-	* The model implements an adaptive threshold. If the neuron spikes, the
-	* threshold increases and the membrane potential will take longer to reach it.
+	* The model implements intrinsic plasticity. If the neuron spikes, the
+	* bias increases and the membrane potential will take less time to reach it.
 	* If the neuron does not spike, the threshold linearly decays over time,
-	* increasing the firing probability of the neuron (see [6], parameters:
-	* \a target_rate, \a target_adaptation_speed).
+	* decrease the firing probability of the neuron.
 	*
 	* This model has been adapted from poisson_dbl_exp_neuron. The default parameters
 	* are set to the mean values in [2], which have were matched to spike-train
@@ -120,6 +119,9 @@ namespace sam
 	* <tr><td>\a b_baseline</td>              <td>double</td> <td>Intrinsic plasticity baseline (-1.0)</td></tr>
 	* <tr><td>\a eta_bias</td>                <td>double</td> <td>Intrinsic plasticity learning rate (0.1)</td></tr>
 	* <tr><td>\a tau_bias</td>                <td>double</td> <td>Coefficient of bias updates (8.5) [ms]</td></tr>
+	* <tr><td>\a max_bias</td>                <td>double</td> <td>Maximum bias value (5.0)</td></tr>
+	* <tr><td>\a min_bias</td>                <td>double</td> <td>Minimum bias value (-30.0)</td></tr>
+	* <tr><td>\a T</td>                       <td>double</td> <td>Bias update scaling parameter (0.58)</td></tr>
 	* </table>
 	*
 	* <i>Sends:</i> SpikeEvent
@@ -145,10 +147,6 @@ namespace sam
 	* [5] Deger M, Schwalger T, Naud R, Gerstner W (2014) Fluctuations and
 	* information filtering in coupled populations of spiking neurons with
 	* adaptation. Physical Review E 90:6, 062704.
-	*
-	* [6] David Kappel, Robert Legenstein, Stefan Habenschuss, Michael Hsieh and
-	* Wolfgang Maass. <i>Reward-based self-configuration of neural circuits.</i> 2017.
-	* https://arxiv.org/abs/1704.04238
 	*
 	* @author  D'Amato; (of poisson_dbl_exp_neuron) Kappel, Hsieh; (of pp_psc_delta) July 2009, Deger, Helias; January 2011, Zaytsev; May 2014, Setareh
 	* @see TracingNode
@@ -262,6 +260,13 @@ namespace sam
 
             /** Coefficient of bias updates on spiking. */
             double tau_bias_;
+
+            /** Bias value range. */
+            double max_bias_;
+            double min_bias_;
+
+            /** Bias update scaling factor, for use in learning rule. */
+            double t_;
 
 			Parameters_(); //!< Sets default parameter values
 

@@ -85,7 +85,10 @@ namespace sam
 	t_ref_remaining_(0),			// ms
 	bias_baseline_(-1.0),
     eta_bias_(0.1),
-    tau_bias_(8.5)
+    tau_bias_(8.5),
+    max_bias_(5.0),
+    min_bias_(-30.0),
+    t_(0.58)
 	{
 
 	}
@@ -112,6 +115,9 @@ namespace sam
         def<double>(d, sam::names::b_baseline, bias_baseline_);
         def<double>(d, sam::names::eta_bias, eta_bias_);
         def<double>(d, sam::names::tau_bias, tau_bias_);
+        def<double>(d, sam::names::max_bias, max_bias_);
+        def<double>(d, sam::names::min_bias, min_bias_);
+        def<double>(d, sam::names::t, t_);
 	}
 
 	void SrmPecevskiAlpha::Parameters_::set(const DictionaryDatum& d)
@@ -136,6 +142,9 @@ namespace sam
 		updateValue<double>(d, sam::names::b_baseline, bias_baseline_);
         updateValue<double>(d, sam::names::eta_bias, eta_bias_);
         updateValue<double>(d, sam::names::tau_bias, tau_bias_);
+        updateValue<double>(d, sam::names::max_bias, max_bias_);
+        updateValue<double>(d, sam::names::min_bias, min_bias_);
+        updateValue<double>(d, sam::names::t, t_);
 
 		if (dead_time_ < 0.0)
 		{
@@ -185,6 +194,11 @@ namespace sam
         if (tau_bias_ <= 0)
         {
             throw BadProperty("tau_bias must be > 0");
+        }
+
+        if (max_bias_ < min_bias_)
+        {
+            throw BadProperty("max_bias must be greather than min_bias");
         }
 	}
 
@@ -423,8 +437,9 @@ namespace sam
             // Update total potential.
 			S_.u_membrane_ = psp_exc + psp_inh + S_.u_i_;
 
-            // Update intrinsic bias.
+            // Update intrinsic bias and clip.
 			S_.adaptive_threshold_ -= P_.eta_bias_ * V_.h_ * 1e-3; // The 1e-3 is necessary since V_.h_ is in ms.
+            S_.adaptive_threshold_ = std::max(std::min(S_.adaptive_threshold_, P_.max_bias_), P_.min_bias_);
 
 			if (S_.r_ == 0)
 			{
@@ -481,10 +496,11 @@ namespace sam
                             S_.u_i_ = 0.0;
 						}
 
-                        // Update intrinsic bias.
+                        // Update intrinsic bias and clip.
 						S_.adaptive_threshold_ += P_.eta_bias_ * P_.tau_bias_ *
-                                std::exp(-(S_.adaptive_threshold_ + P_.bias_baseline_));
-					}
+                                std::exp(-P_.t_ * (S_.adaptive_threshold_ + P_.bias_baseline_));
+                        S_.adaptive_threshold_ = std::max(std::min(S_.adaptive_threshold_, P_.max_bias_), P_.min_bias_);
+                    }
 				}
 			}
 			else // Neuron is within dead time

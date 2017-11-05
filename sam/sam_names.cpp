@@ -35,9 +35,12 @@ namespace sam
         const Name eta_final("eta_final");
         const Name input_conductance("input_conductance");
         const Name learning_time("learning_time");
+        const Name max_bias("max_bias");
+        const Name min_bias("min_bias");
         const Name r_m("r_m");
         const Name rect_exc("rect_exc");
         const Name rect_inh("rect_inh");
+        const Name t("T");
         const Name tau_bias("tau_bias");
         const Name tau_exc("tau_exc");
         const Name tau_inh("tau_inh");

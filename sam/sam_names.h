@@ -45,9 +45,12 @@ namespace sam
         extern const Name eta_final;
         extern const Name input_conductance;
         extern const Name learning_time;
+        extern const Name max_bias;
+        extern const Name min_bias;
         extern const Name r_m;
         extern const Name rect_exc;
         extern const Name rect_inh;
+        extern const Name t;
         extern const Name tau_bias;
         extern const Name tau_exc;
         extern const Name tau_inh;
