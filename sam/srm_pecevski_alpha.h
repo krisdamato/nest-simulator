@@ -117,9 +117,9 @@ namespace sam
 	*                                                             (1.238) [Hz/mV]</td></tr>
 	* <tr><td>\a c_3</td>                     <td>double</td> <td>Coefficient of exponential non-linearity of transfer
 	*                                                             function (0.25, &ge 0.0) [1/mV]</td></tr>
-	* <tr><td>\a target_rate</td>             <td>double</td> <td>Target rate of neuron for adaptation mechanism
-	*                                                             (10.0, &ge 0.0) [Hz]</td></tr>
-	* <tr><td>\a target_adaptation_speed</td> <td>double</td> <td>Speed of rate adaptation (0.0, &ge 0.0)</td></tr>
+	* <tr><td>\a b_baseline</td>              <td>double</td> <td>Intrinsic plasticity baseline (-1.0)</td></tr>
+	* <tr><td>\a eta_bias</td>                <td>double</td> <td>Intrinsic plasticity learning rate (0.1)</td></tr>
+	* <tr><td>\a tau_bias</td>                <td>double</td> <td>Coefficient of bias updates (8.5) [ms]</td></tr>
 	* </table>
 	*
 	* <i>Sends:</i> SpikeEvent
@@ -254,11 +254,14 @@ namespace sam
 			/** Dead time from simulation start. */
 			double t_ref_remaining_;
 
-			/** Target average output rate for homeostatic adaptation. */
-			double target_rate_;
+            /** Intrinsic plasticity baseline parameter, see Peceveski et al. 2016. */
+            double bias_baseline_;
 
-			/** Rate with which the homeostatic adaptation current is updated. */
-			double target_adaptation_speed_;
+            /** Learning rate of intrinsic plasticity. */
+            double eta_bias_;
+
+            /** Coefficient of bias updates on spiking. */
+            double tau_bias_;
 
 			Parameters_(); //!< Sets default parameter values
 
@@ -273,7 +276,7 @@ namespace sam
 		{
 			double u_membrane_; //!< The membrane potential
 			double input_current_; //!< The piecewise linear input currents
-			double adaptive_threshold_; //!< adaptive threshold to maintain average output rate
+			double adaptive_threshold_; //!< Intrinsic plasticity bias
             double u_i_; //!< Current-induced voltage
 			int r_; //!< Number of refractory steps remaining
 

@@ -37,8 +37,10 @@ namespace sam
     namespace names
     {
         extern const Name adaptive_threshold;
+        extern const Name b_baseline;
         extern const Name e_0_exc;
         extern const Name e_0_inh;
+        extern const Name eta_bias;
         extern const Name eta_0;
         extern const Name eta_final;
         extern const Name input_conductance;
@@ -46,8 +48,7 @@ namespace sam
         extern const Name r_m;
         extern const Name rect_exc;
         extern const Name rect_inh;
-        extern const Name target_rate;
-        extern const Name target_adaptation_speed;
+        extern const Name tau_bias;
         extern const Name tau_exc;
         extern const Name tau_inh;
         extern const Name w_baseline;

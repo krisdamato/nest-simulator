@@ -83,8 +83,9 @@ namespace sam
 	c_3_(0.25),
 	I_e_(0),						// pA
 	t_ref_remaining_(0),			// ms
-	target_rate_(10.0),				// Hz
-	target_adaptation_speed_(0.0)
+	bias_baseline_(-1.0),
+    eta_bias_(0.1),
+    tau_bias_(8.5)
 	{
 
 	}
@@ -108,8 +109,9 @@ namespace sam
 		def<double>(d, nest::names::c_3, c_3_);
 		def<double>(d, nest::names::I_e, I_e_);
 		def<double>(d, nest::names::t_ref_remaining, t_ref_remaining_);
-		def<double>(d, sam::names::target_rate, target_rate_);
-		def<double>(d, sam::names::target_adaptation_speed, target_adaptation_speed_);
+        def<double>(d, sam::names::b_baseline, bias_baseline_);
+        def<double>(d, sam::names::eta_bias, eta_bias_);
+        def<double>(d, sam::names::tau_bias, tau_bias_);
 	}
 
 	void SrmPecevskiAlpha::Parameters_::set(const DictionaryDatum& d)
@@ -131,8 +133,9 @@ namespace sam
 		updateValue<double>(d, nest::names::c_3, c_3_);
 		updateValue<double>(d, nest::names::I_e, I_e_);
 		updateValue<double>(d, nest::names::t_ref_remaining, t_ref_remaining_);
-		updateValue<double>(d, sam::names::target_rate, target_rate_);
-		updateValue<double>(d, sam::names::target_adaptation_speed, target_adaptation_speed_);
+		updateValue<double>(d, sam::names::b_baseline, bias_baseline_);
+        updateValue<double>(d, sam::names::eta_bias, eta_bias_);
+        updateValue<double>(d, sam::names::tau_bias, tau_bias_);
 
 		if (dead_time_ < 0.0)
 		{
@@ -174,15 +177,15 @@ namespace sam
 			throw BadProperty("t_ref_remaining must be >= 0.");
 		}
 
-		if (target_rate_ < 0.0)
-		{
-			throw BadProperty("target_rate must be >= 0.");
-		}
+        if (eta_bias_ < 0)
+        {
+            throw BadProperty("eta_bias must be >= 0");
+        }
 
-		if (target_adaptation_speed_ < 0.0)
-		{
-			throw BadProperty("target_adaptation_speed must be >= 0.");
-		}
+        if (tau_bias_ <= 0)
+        {
+            throw BadProperty("tau_bias must be > 0");
+        }
 	}
 
 	//
@@ -420,16 +423,16 @@ namespace sam
             // Update total potential.
 			S_.u_membrane_ = psp_exc + psp_inh + S_.u_i_;
 
-			S_.adaptive_threshold_ -= 1e-3 * V_.h_ * P_.target_rate_ * P_.target_adaptation_speed_;
+            // Update intrinsic bias.
+			S_.adaptive_threshold_ -= P_.eta_bias_ * V_.h_ * 1e-3; // The 1e-3 is necessary since V_.h_ is in ms.
 
 			if (S_.r_ == 0)
 			{
-				// Neuron not refractory
+				// Neuron is not refractory.
 
 				// Calculate instantaneous rate from transfer function:
 				//     rate = c1 * u' + c2 * exp(c3 * u')
-
-				double V_eff = S_.u_membrane_ - S_.adaptive_threshold_;
+				double V_eff = S_.u_membrane_ + S_.adaptive_threshold_;
 
 				double rate = (P_.c_1_ * V_eff + P_.c_2_ * std::exp(P_.c_3_ * V_eff));
 				double spike_probability = -numerics::expm1(-rate * V_.h_ * 1e-3);
@@ -478,9 +481,11 @@ namespace sam
                             S_.u_i_ = 0.0;
 						}
 
-						S_.adaptive_threshold_ += P_.target_adaptation_speed_;
-					} // S_.u_membrane_ = P_.V_reset_;
-				} // if (rate > 0.0)
+                        // Update intrinsic bias.
+						S_.adaptive_threshold_ += P_.eta_bias_ * P_.tau_bias_ *
+                                std::exp(-(S_.adaptive_threshold_ + P_.bias_baseline_));
+					}
+				}
 			}
 			else // Neuron is within dead time
 			{

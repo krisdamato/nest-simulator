@@ -144,18 +144,18 @@ namespace sam
         }
 
     private:
-        double facilitate(double current_weight, double t)
+        double facilitate(double current_weight, double t) const
         {
             double delta_weight = std::exp(-(w_baseline_ + current_weight)) - 1;
             return std::max(std::min(current_weight + current_eta(t) * delta_weight, Wmax_), Wmin_);
         }
 
-        double depress(double current_weight, double t)
+        double depress(double current_weight, double t) const
         {
             return std::max(std::min(current_weight - current_eta(t), Wmax_), Wmin_);
         }
 
-        double current_eta(double t)
+        double current_eta(double t) const
         {
             if (learning_time_ == -1)
             {
