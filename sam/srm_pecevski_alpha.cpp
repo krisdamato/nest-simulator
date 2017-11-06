@@ -103,7 +103,7 @@ namespace sam
         def<bool>(d, sam::names::rect_inh, use_rect_psp_inh_);
         def<double>(d, sam::names::r_m, resistance_);
 		def<double>(d, nest::names::dead_time, dead_time_);
-		def<double>(d, nest::names::dead_time_random, dead_time_random_);
+		def<bool>(d, nest::names::dead_time_random, dead_time_random_);
 		def<long>(d, nest::names::dead_time_shape, dead_time_shape_);
 		def<double>(d, sam::names::e_0_exc, epsilon_0_exc_);
 		def<double>(d, sam::names::e_0_inh, epsilon_0_inh_);
@@ -133,7 +133,7 @@ namespace sam
         updateValue<bool>(d, sam::names::rect_inh, use_rect_psp_inh_);
         updateValue<double>(d, sam::names::r_m, resistance_);
 		updateValue<double>(d, nest::names::dead_time, dead_time_);
-		updateValue<double>(d, nest::names::dead_time_random, dead_time_random_);
+		updateValue<bool>(d, nest::names::dead_time_random, dead_time_random_);
 		updateValue<long>(d, nest::names::dead_time_shape, dead_time_shape_);
 		updateValue<double>(d, sam::names::e_0_exc, epsilon_0_exc_);
 		updateValue<double>(d, sam::names::e_0_inh, epsilon_0_inh_);
