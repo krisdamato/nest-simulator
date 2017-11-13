@@ -416,6 +416,7 @@ namespace sam
 
             double delta = (now - nest::Time::step(spike_time)).get_ms();
             double this_psp = amplitude * kernel(delta, use_exc_psp);
+
             if (this_psp <= sam::effective_zero && delta > 0) // We'll remove spikes when they aren't affecting membrane voltage.
             {
                 // Erase the spike, because we won't need it anymore.
@@ -463,7 +464,7 @@ namespace sam
 			S_.u_membrane_ = psp_exc + psp_inh + S_.u_i_;
 
             // Update intrinsic bias and clip.
-			S_.adaptive_threshold_ -= P_.eta_bias_ * V_.h_ * 1e-3; // The 1e-3 is necessary since V_.h_ is in ms.
+			S_.adaptive_threshold_ -= P_.eta_bias_ * V_.h_; // No 1e-3 factor is necessary since bias is in mV.
             S_.adaptive_threshold_ = std::max(std::min(S_.adaptive_threshold_, P_.max_bias_), P_.min_bias_);
 
 			if (S_.r_ == 0)
