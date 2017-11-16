@@ -121,16 +121,13 @@ namespace sam
 	*                                                             (1.238) [Hz/mV]</td></tr>
 	* <tr><td>\a c_3</td>                     <td>double</td> <td>Coefficient of exponential non-linearity of transfer
 	*                                                             function (0.25, &ge 0.0) [1/mV]</td></tr>
-	* <tr><td>\a b_baseline</td>              <td>double</td> <td>Intrinsic plasticity baseline (-1.0)</td></tr>
-	* <tr><td>\a eta_bias</td>                <td>double</td> <td>Intrinsic plasticity learning rate (0.1)</td></tr>
+	* <tr><td>\a b_baseline</td>              <td>double</td> <td>Intrinsic excitability baseline (-1.0)</td></tr>
+	* <tr><td>\a eta_bias</td>                <td>double</td> <td>Intrinsic excitability learning rate (0.1)</td></tr>
 	* <tr><td>\a tau_bias</td>                <td>double</td> <td>Coefficient of bias updates (15.0) [ms]</td></tr>
 	* <tr><td>\a max_bias</td>                <td>double</td> <td>Maximum bias value (5.0)</td></tr>
 	* <tr><td>\a min_bias</td>                <td>double</td> <td>Minimum bias value (-30.0)</td></tr>
 	* <tr><td>\a T</td>                       <td>double</td> <td>Bias update scaling parameter (0.58)</td></tr>
 	* <tr><td>\a bias</td>                    <td>double</td> <td>Initial bias (5.0)</td></tr>
-	* <tr><td>\a use_random_bias</td>         <td>bool</td> <td>Use a Gaussian random bias (false)</td></tr>
-	* <tr><td>\a mu_bias</td>                 <td>double</td> <td>Mean of bias distribution (0.0)</td></tr>
-	* <tr><td>\a sigma_bias</td>              <td>double</td> <td>Std of bias distribution (1.0)</td></tr>
 	* </table>
 	*
 	* <i>Sends:</i> SpikeEvent
@@ -274,11 +271,6 @@ namespace sam
             double max_bias_;
             double min_bias_;
 
-			/** Bias distribution parameters. */
-			bool use_random_bias_;
-			double mu_bias_;
-			double sigma_bias_;
-
             /** Bias update scaling factor, for use in learning rule. */
             double t_;
 
@@ -295,7 +287,7 @@ namespace sam
 		{
 			double u_membrane_; //!< The membrane potential
 			double input_current_; //!< The piecewise linear input currents
-			double adaptive_threshold_; //!< Intrinsic plasticity bias
+			double bias_; //!< Intrinsic plasticity bias
             double u_i_; //!< Current-induced voltage
 			int r_; //!< Number of refractory steps remaining
 
@@ -337,7 +329,6 @@ namespace sam
 			librandom::RngPtr rng_; // random number generator of my own thread
 			librandom::PoissonRandomDev poisson_dev_; // random deviate generator
 			librandom::GammaRandomDev gamma_dev_; // random deviate generator
-			librandom::ClippedRedrawContinuousRandomDev<librandom::NormalRandomDev> gaussian_dev_; // Gaussian deviate generator
 
 			int DeadTimeCounts_;
 
@@ -356,7 +347,7 @@ namespace sam
 
 		double get_E_sfa_() const
 		{
-			return S_.adaptive_threshold_;
+			return S_.bias_;
 		}
 
 		/**

@@ -89,9 +89,6 @@ namespace sam
     tau_bias_(15.0),
     max_bias_(5.0),
     min_bias_(-30.0),
-    use_random_bias_(false),
-    mu_bias_(0.0),
-    sigma_bias_(1.0),
 	t_(0.58)
 	{
 
@@ -121,9 +118,6 @@ namespace sam
         def<double>(d, sam::names::tau_bias, tau_bias_);
         def<double>(d, sam::names::max_bias, max_bias_);
         def<double>(d, sam::names::min_bias, min_bias_);
-        def<bool>(d, sam::names::use_random_bias, use_random_bias_);
-        def<double>(d, sam::names::mu_bias, mu_bias_);
-        def<double>(d, sam::names::sigma_bias, sigma_bias_);
 		def<double>(d, sam::names::t, t_);
 	}
 
@@ -151,9 +145,6 @@ namespace sam
         updateValue<double>(d, sam::names::tau_bias, tau_bias_);
         updateValue<double>(d, sam::names::max_bias, max_bias_);
         updateValue<double>(d, sam::names::min_bias, min_bias_);
-        updateValue<bool>(d, sam::names::use_random_bias, use_random_bias_);
-        updateValue<double>(d, sam::names::mu_bias, mu_bias_);
-        updateValue<double>(d, sam::names::sigma_bias, sigma_bias_);
 		updateValue<double>(d, sam::names::t, t_);
 
 		if (dead_time_ < 0.0)
@@ -223,7 +214,7 @@ namespace sam
 	SrmPecevskiAlpha::State_::State_():
 		u_membrane_(0.0),
 		input_current_(0.0),
-		adaptive_threshold_(5.0),
+		bias_(5.0),
         u_i_(0.0),
 		r_(0)
 	{
@@ -236,7 +227,7 @@ namespace sam
 	void SrmPecevskiAlpha::State_::get(DictionaryDatum& d, const Parameters_&) const
 	{
 		def<double>(d, nest::names::V_m, u_membrane_); // Membrane potential
-		def<double>(d, sam::names::bias, adaptive_threshold_);
+		def<double>(d, sam::names::bias, bias_);
 	}
 
 	/**
@@ -245,7 +236,7 @@ namespace sam
 	void SrmPecevskiAlpha::State_::set(const DictionaryDatum& d, const Parameters_&)
 	{
 		updateValue<double>(d, nest::names::V_m, u_membrane_);
-		updateValue<double>(d, sam::names::bias, adaptive_threshold_);
+		updateValue<double>(d, sam::names::bias, bias_);
 	}
 
 	//
@@ -363,21 +354,6 @@ namespace sam
 			V_.DeadTimeCounts_ = nest::Time(nest::Time::ms(P_.dead_time_)).get_steps();
 			assert(V_.DeadTimeCounts_ >= 0); // Since t_ref_ >= 0, this can only fail in error
 		}
-
-        if (P_.use_random_bias_)
-        {
-			// Set Gaussian distribution parameters.
-			DictionaryDatum d = DictionaryDatum(new Dictionary());
-			def<double>(d, librandom::names::low, P_.min_bias_);
-			def<double>(d, librandom::names::high, P_.max_bias_);
-			def<double>(d, librandom::names::mu, P_.mu_bias_);
-			def<double>(d, librandom::names::sigma, P_.sigma_bias_);
-
-            V_.gaussian_dev_.set_status(d);
-
-			// Generate the bias.
-			S_.adaptive_threshold_ = V_.gaussian_dev_(V_.rng_);
-        }
 	}
 
 	/*
@@ -464,15 +440,18 @@ namespace sam
 			S_.u_membrane_ = psp_exc + psp_inh + S_.u_i_;
 
             // Update intrinsic bias and clip.
-			S_.adaptive_threshold_ -= P_.eta_bias_ * V_.h_; // No 1e-3 factor is necessary since bias is in mV.
-            S_.adaptive_threshold_ = std::max(std::min(S_.adaptive_threshold_, P_.max_bias_), P_.min_bias_);
-
+            if (P_.eta_bias_ > sam::effective_zero)
+            {
+            	S_.bias_ -= P_.eta_bias_ * V_.h_ * 1e-3; // 1e-3 factor is necessary since V_.h_ is in ms.
+            	S_.bias_ = std::max(std::min(S_.bias_, P_.max_bias_), P_.min_bias_);	
+            }
+			
 			if (S_.r_ == 0)
 			{
 				// Neuron is not refractory.
 				// Calculate instantaneous rate from transfer function:
 				//     rate = c1 * u' + c2 * exp(c3 * u')
-				double V_eff = S_.u_membrane_ + S_.adaptive_threshold_;
+				double V_eff = S_.u_membrane_ + S_.bias_;
 
                 // See Neuronal Dynamics, Gerstner and Kistler, p. 228 for an explanation of
                 // spike probabilities.
@@ -524,9 +503,12 @@ namespace sam
 						}
 
                         // Update intrinsic bias and clip.
-						S_.adaptive_threshold_ += P_.eta_bias_ * P_.tau_bias_ *
-                                std::exp(-P_.t_ * (S_.adaptive_threshold_ + P_.bias_baseline_));
-                        S_.adaptive_threshold_ = std::max(std::min(S_.adaptive_threshold_, P_.max_bias_), P_.min_bias_);
+                        if (P_.eta_bias_ > sam::effective_zero)
+                        {
+                        	double delta = P_.eta_bias_ * P_.tau_bias_ * 1e-3 * std::exp(-P_.t_ * (S_.bias_ + P_.bias_baseline_));
+							S_.bias_ += delta;
+                        	S_.bias_ = std::max(std::min(S_.bias_, P_.max_bias_), P_.min_bias_);
+                        }
                     }
 				}
 			}
