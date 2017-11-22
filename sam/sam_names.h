@@ -52,6 +52,7 @@ namespace sam
         extern const Name r_m;
         extern const Name rect_exc;
         extern const Name rect_inh;
+        extern const Name rel_eta;
         extern const Name t;
         extern const Name tau_bias;
         extern const Name tau_exc;

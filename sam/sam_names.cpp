@@ -40,6 +40,7 @@ namespace sam
         const Name min_bias("min_bias");
         const Name min_weight("min_weight");
         const Name r_m("r_m");
+        const Name rel_eta("rel_eta");
         const Name rect_exc("rect_exc");
         const Name rect_inh("rect_inh");
         const Name t("T");

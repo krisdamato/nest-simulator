@@ -123,6 +123,7 @@ namespace sam
 	*                                                             function (0.25, &ge 0.0) [1/mV]</td></tr>
 	* <tr><td>\a b_baseline</td>              <td>double</td> <td>Intrinsic excitability baseline (-1.0)</td></tr>
 	* <tr><td>\a eta_bias</td>                <td>double</td> <td>Intrinsic excitability learning rate (0.1)</td></tr>
+	* <tr><td>\a rel_eta</td>                 <td>double</td> <td>Relative coefficient of learning for bias spikes (1.0)</td></tr>
 	* <tr><td>\a tau_bias</td>                <td>double</td> <td>Coefficient of bias updates (15.0) [ms]</td></tr>
 	* <tr><td>\a max_bias</td>                <td>double</td> <td>Maximum bias value (5.0)</td></tr>
 	* <tr><td>\a min_bias</td>                <td>double</td> <td>Minimum bias value (-30.0)</td></tr>
@@ -263,6 +264,7 @@ namespace sam
 
             /** Learning rate of intrinsic plasticity. */
             double eta_bias_;
+            double rel_eta_;
 
             /** Coefficient of bias updates on spiking. */
             double tau_bias_;

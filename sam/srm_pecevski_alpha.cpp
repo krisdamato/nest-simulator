@@ -86,6 +86,7 @@ namespace sam
 	t_ref_remaining_(0),			// ms
 	bias_baseline_(-1.0),
     eta_bias_(0.1),
+    rel_eta_(1.0),
     tau_bias_(15.0),
     max_bias_(5.0),
     min_bias_(-30.0),
@@ -115,6 +116,7 @@ namespace sam
 		def<double>(d, nest::names::t_ref_remaining, t_ref_remaining_);
         def<double>(d, sam::names::b_baseline, bias_baseline_);
         def<double>(d, sam::names::eta_bias, eta_bias_);
+        def<double>(d, sam::names::rel_eta, rel_eta_);
         def<double>(d, sam::names::tau_bias, tau_bias_);
         def<double>(d, sam::names::max_bias, max_bias_);
         def<double>(d, sam::names::min_bias, min_bias_);
@@ -142,6 +144,7 @@ namespace sam
 		updateValue<double>(d, nest::names::t_ref_remaining, t_ref_remaining_);
 		updateValue<double>(d, sam::names::b_baseline, bias_baseline_);
         updateValue<double>(d, sam::names::eta_bias, eta_bias_);
+        updateValue<double>(d, sam::names::rel_eta, rel_eta_);
         updateValue<double>(d, sam::names::tau_bias, tau_bias_);
         updateValue<double>(d, sam::names::max_bias, max_bias_);
         updateValue<double>(d, sam::names::min_bias, min_bias_);
@@ -190,6 +193,11 @@ namespace sam
         if (eta_bias_ < 0)
         {
             throw BadProperty("eta_bias must be >= 0");
+        }
+
+        if (rel_eta_ <= 0)
+        {
+        	throw BadProperty("rel_eta must be > 0");
         }
 
         if (tau_bias_ <= 0)
@@ -505,7 +513,7 @@ namespace sam
                         // Update intrinsic bias and clip.
                         if (P_.eta_bias_ > sam::effective_zero)
                         {
-                        	double delta = P_.eta_bias_ * P_.tau_bias_ * 1e-3 * std::exp(-P_.t_ * (S_.bias_ + P_.bias_baseline_));
+                        	double delta = P_.rel_eta_ * P_.eta_bias_ * P_.tau_bias_ * 1e-3 * std::exp(-P_.t_ * (S_.bias_ + P_.bias_baseline_));
 							S_.bias_ += delta;
                         	S_.bias_ = std::max(std::min(S_.bias_, P_.max_bias_), P_.min_bias_);
                         }
