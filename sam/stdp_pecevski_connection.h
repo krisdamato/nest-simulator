@@ -71,6 +71,7 @@ namespace sam
     * <tr><td>\a w_baseline</td>              <td>double</td> <td>Baseline weight offset (2.5 ln 0.2)</td></tr>
     * <tr><td>\a learning_time</td>           <td>long</td> <td>Learning duration in ms; -1 = forever (-1) [ms]</td></tr>
     * <tr><td>\a T</td>                       <td>long</td> <td>Scaling parameter in weight update.</td></tr>
+    * <tr><td>\a tau_multiplier</td>                       <td>long</td> <td>Multiplier of tau that limits depressing effects.</td></tr>
     * </table>
 	*
 	* <i>Sends:</i> SpikeEvent
@@ -185,6 +186,7 @@ namespace sam
         double Wmax_;
         double Wmin_;
         double w_baseline_;
+        double depress_tau_multiplier_;
         long learning_time_;
     };
 
@@ -233,7 +235,7 @@ namespace sam
                 // Delta is within the potentiation window.
                 weight_ = facilitate(weight_, start->t_ + dendritic_delay);
             }
-            else
+            else if (dt <= depress_tau_multiplier_ * tau_)
             {
                 // Delta is outside potentiation window.
                 weight_ = depress(weight_, start->t_ + dendritic_delay);
@@ -264,6 +266,7 @@ namespace sam
               Wmax_(4.0),
               Wmin_(0.0),
               w_baseline_(-4.02359), // 2.5 * ln(0.2) (see [1]).
+              depress_tau_multiplier_(5.0),
               learning_time_(-1) // i.e. learn forever.
     {
 
@@ -280,6 +283,7 @@ namespace sam
               Wmax_(rhs.Wmax_),
               Wmin_(rhs.Wmin_),
               w_baseline_(rhs.w_baseline_),
+              depress_tau_multiplier_(rhs.depress_tau_multiplier_),
               learning_time_(rhs.learning_time_)
     {
 
@@ -298,6 +302,7 @@ namespace sam
         def<double>(d, sam::names::eta_final, eta_final_);
         def<double>(d, sam::names::w_baseline, w_baseline_);
         def<long>(d, sam::names::learning_time, learning_time_);
+        def<double>(d, sam::names::depress_multiplier, depress_tau_multiplier_);
         def<long>(d, nest::names::size_of, sizeof( *this ) );
     }
 
@@ -314,6 +319,7 @@ namespace sam
         updateValue<double>(d, sam::names::eta_final, eta_final_);
         updateValue<double>(d, sam::names::w_baseline, w_baseline_);
         updateValue<long>(d, sam::names::learning_time, learning_time_);
+        updateValue<double>(d, sam::names::depress_multiplier, depress_tau_multiplier_);
 
         // check if weight_ and Wmax_ has the same sign
         if (not(((weight_ >= 0 ) - (weight_ < 0)) == ((Wmax_ >= 0 ) - (Wmax_ < 0))))
@@ -334,6 +340,11 @@ namespace sam
         if (tau_ <= 0)
         {
             throw BadProperty("Tau must be positive.");
+        }
+
+        if (depress_tau_multiplier_ < 1.0)
+        {
+            throw BadProperty("Tau multiplier for depression must be greater than or equal to 1.0.");
         }
     }
 }

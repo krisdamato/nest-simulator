@@ -28,6 +28,7 @@ namespace sam
     {
         const Name b_baseline("b_baseline");
         const Name bias("bias");
+        const Name depress_multiplier("depress_multiplier");
         const Name e_0_exc("e_0_exc");
         const Name e_0_inh("e_0_inh");
         const Name eta_bias("eta_bias");

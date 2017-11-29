@@ -38,6 +38,7 @@ namespace sam
     {
         extern const Name b_baseline;
         extern const Name bias;
+        extern const Name depress_multiplier;
         extern const Name e_0_exc;
         extern const Name e_0_inh;
         extern const Name eta_bias;
