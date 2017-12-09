@@ -90,7 +90,8 @@ namespace sam
     tau_bias_(15.0),
     max_bias_(5.0),
     min_bias_(-30.0),
-	t_(0.58)
+	t_(0.58),
+	use_renewal_(false)
 	{
 
 	}
@@ -121,6 +122,7 @@ namespace sam
         def<double>(d, sam::names::max_bias, max_bias_);
         def<double>(d, sam::names::min_bias, min_bias_);
 		def<double>(d, sam::names::t, t_);
+		def<bool>(d, sam::names::use_renewal, use_renewal_);
 	}
 
 	void SrmPecevskiAlpha::Parameters_::set(const DictionaryDatum& d)
@@ -149,6 +151,7 @@ namespace sam
         updateValue<double>(d, sam::names::max_bias, max_bias_);
         updateValue<double>(d, sam::names::min_bias, min_bias_);
 		updateValue<double>(d, sam::names::t, t_);
+		updateValue<bool>(d, sam::names::use_renewal, use_renewal_);
 
 		if (dead_time_ < 0.0)
 		{
@@ -392,27 +395,66 @@ namespace sam
 		double psp = 0;
         SpikeQueue& queue = use_exc_psp ? B_.exc_queue_ : B_.inh_queue_;
 
-        for (SpikeQueue::IteratorType it = queue.Begin(); it != queue.End();)
-        {
-            // Get spike time and value.
-            long spike_time = it->first;
-            double amplitude = it->second;
+		// Find the spike with the latest time in range if using renewal.
+		if (P_.use_renewal_)
+		{
+			double latest_delta = 0.0;
+			double latest_amplitude = 0.0;
 
-            double delta = (now - nest::Time::step(spike_time)).get_ms();
-            double this_psp = amplitude * kernel(delta, use_exc_psp);
+			for (SpikeQueue::IteratorType it = queue.Begin(); it != queue.End();)
+        	{
+        		// Get spike time and value.
+	            long spike_time = it->first;
+	            double amplitude = it->second;
 
-            if (this_psp <= sam::effective_zero && delta > 0) // We'll remove spikes when they aren't affecting membrane voltage.
-            {
-                // Erase the spike, because we won't need it anymore.
-                it = queue.EraseItemAt(it);
-            }
-            else
-            {
-                ++it;
-            }
+	            double delta = (now - nest::Time::step(spike_time)).get_ms();
+	            double this_psp = amplitude * kernel(delta, use_exc_psp);
 
-            psp += std::max(0., this_psp);
-        }
+	            if (delta <= latest_delta && delta <= 0)
+	            {
+	            	latest_delta = delta;
+	            	latest_amplitude = amplitude;
+	            }
+
+	            if (this_psp <= sam::effective_zero && delta > 0) // We'll remove spikes when they aren't affecting membrane voltage.
+	            {
+	                // Erase the spike, because we won't need it anymore.
+	                it = queue.EraseItemAt(it);
+	            }
+	            else
+	            {
+	                ++it;
+	            }
+        	}
+
+        	// Find the PSP from the latest delta.
+        	double latest_psp = latest_amplitude * kernel(latest_delta, use_exc_psp);
+        	psp += std::max(0., latest_psp);
+		}
+		else
+		{
+			for (SpikeQueue::IteratorType it = queue.Begin(); it != queue.End();)
+	        {
+	            // Get spike time and value.
+	            long spike_time = it->first;
+	            double amplitude = it->second;
+
+	            double delta = (now - nest::Time::step(spike_time)).get_ms();
+	            double this_psp = amplitude * kernel(delta, use_exc_psp);
+
+	            if (this_psp <= sam::effective_zero && delta > 0) // We'll remove spikes when they aren't affecting membrane voltage.
+	            {
+	                // Erase the spike, because we won't need it anymore.
+	                it = queue.EraseItemAt(it);
+	            }
+	            else
+	            {
+	                ++it;
+	            }
+
+	            psp += std::max(0., this_psp);
+	        }
+		}
 
 		return use_exc_psp? psp : -psp;
 	}
@@ -540,18 +582,19 @@ namespace sam
 	void SrmPecevskiAlpha::handle(nest::SpikeEvent& e)
 	{
 		assert(e.get_delay() > 0);
+		long spike_time = e.get_rel_delivery_steps(nest::Time());
 
 		if (e.get_weight() > 0.0)
 		{
 			// Add spike to the queue.
 			// Note: we need to compute the absolute number of steps since the beginning of simulation time.
-			B_.exc_queue_.AddSpike(e.get_rel_delivery_steps(nest::Time()), e.get_weight() * e.get_multiplicity());
+			B_.exc_queue_.AddSpike(spike_time, e.get_weight() * e.get_multiplicity());
 		}
 		else
         {
             // Add spike to the queue.
             // Note: we need to compute the absolute number of steps since the beginning of simulation time.
-            B_.inh_queue_.AddSpike(e.get_rel_delivery_steps(nest::Time()), fabs(e.get_weight()) * e.get_multiplicity());
+            B_.inh_queue_.AddSpike(spike_time, fabs(e.get_weight()) * e.get_multiplicity());
         }
 	}
 

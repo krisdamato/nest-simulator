@@ -129,6 +129,7 @@ namespace sam
 	* <tr><td>\a min_bias</td>                <td>double</td> <td>Minimum bias value (-30.0)</td></tr>
 	* <tr><td>\a T</td>                       <td>double</td> <td>Bias update scaling parameter (0.58)</td></tr>
 	* <tr><td>\a bias</td>                    <td>double</td> <td>Initial bias (5.0)</td></tr>
+	* <tr><td>\a use_renewal</td>             <td>double</td> <td>Use renewal PSPs (latest spike only is relevant) (false)</td></tr>
 	* </table>
 	*
 	* <i>Sends:</i> SpikeEvent
@@ -275,6 +276,9 @@ namespace sam
 
             /** Bias update scaling factor, for use in learning rule. */
             double t_;
+
+            /** If true, will use renewed PSPs, i.e. only the last PSP is relevant. */
+            bool use_renewal_;
 
 			Parameters_(); //!< Sets default parameter values
 

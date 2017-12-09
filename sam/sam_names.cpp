@@ -48,6 +48,7 @@ namespace sam
         const Name tau_bias("tau_bias");
         const Name tau_exc("tau_exc");
         const Name tau_inh("tau_inh");
+        const Name use_renewal("use_renewal");
         const Name w_baseline("w_baseline");
     }
 }

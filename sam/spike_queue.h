@@ -42,6 +42,7 @@ namespace sam
 		// Methods.
 		void AddSpike(const long timeStep, const double amplitude);
 		void Clear();
+		bool Empty();
 		IteratorType Begin();
 		IteratorType End();
 		IteratorType EraseItemAt(IteratorType& it);
@@ -58,6 +59,11 @@ namespace sam
 	inline void SpikeQueue::Clear()
 	{
 		buffer_.clear();
+	}
+
+	inline bool SpikeQueue::Empty()
+	{
+		return buffer_.begin() == buffer_.end();
 	}
 
 	inline SpikeQueue::IteratorType SpikeQueue::Begin()

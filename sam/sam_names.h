@@ -58,6 +58,7 @@ namespace sam
         extern const Name tau_bias;
         extern const Name tau_exc;
         extern const Name tau_inh;
+        extern const Name use_renewal;
         extern const Name w_baseline;
     }
 }
